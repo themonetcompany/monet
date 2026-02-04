@@ -16,7 +16,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.2" />
   </ItemGroup>
 
-  <Target Name="PublishRunAngular" BeforeTargets="ComputeFilesToPublish">
+  <Target Name="PublishRunAngular" BeforeTargets="ComputeFilesToPublish" Condition="'$(SkipClientAppInstall)' != 'true'">
     <Message Importance="high" Text="Running npm install and npm run build in ClientApp..." />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />

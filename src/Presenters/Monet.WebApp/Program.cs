@@ -2,7 +2,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSpaStaticFiles(options =>
 {
-    options.RootPath = "ClientApp/dist/ClientApp";
+    options.RootPath = "wwwroot";
 });
 
 var app = builder.Build();
@@ -15,18 +15,15 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 
-app.MapGet("/api/health", () =>
+app.MapGet("/api/health", () => Results.Ok(new
 {
-    return Results.Ok(new
-    {
-        status = "ok",
-        timestamp = DateTimeOffset.UtcNow
-    });
-});
+    status = "ok",
+    timestamp = DateTimeOffset.UtcNow
+}));
 
 app.MapGet("/api/version", (IConfiguration configuration) =>
 {
-    var version = configuration["APP_VERSION"];
+    var version = configuration["Application:Version"];
     if (string.IsNullOrWhiteSpace(version))
     {
         version = "Unknown";
