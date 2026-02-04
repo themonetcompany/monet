@@ -1,0 +1,38 @@
+# Build artifacts
+bin/
+obj/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# Visual Studio
+.vs/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Node / Angular
+node_modules/
+**/node_modules/
+ClientApp/.angular/
+ClientApp/dist/
+ClientApp/.cache/
+
+# .NET tooling
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# OS
+.DS_Store
+Thumbs.db
