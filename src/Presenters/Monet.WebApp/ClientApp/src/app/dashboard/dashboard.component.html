@@ -1,0 +1,155 @@
+<div class="p-5">
+  <div class="mb-5 flex items-center justify-between">
+    <div>
+      @if (summary$ | async; as summary) {
+        <p class="text-xs text-stone-400">Bonjour, {{ summary.greetingName }} 👋</p>
+      }
+      <p class="mt-0.5 text-base font-semibold text-stone-950">Vue d'ensemble</p>
+    </div>
+    @if (summary$ | async; as summary) {
+      <div class="flex items-center gap-2">
+        <div class="flex -space-x-1">
+          <div class="h-5 w-5 rounded-full border-2 border-white bg-stone-200"></div>
+          <div class="h-5 w-5 rounded-full border-2 border-white bg-stone-300"></div>
+        </div>
+        <div class="text-[10px] text-stone-400">{{ summary.linkedAccounts }} comptes liés</div>
+      </div>
+    }
+  </div>
+
+  @if (summary$ | async; as summary) {
+    <div class="mb-4 rounded-xl bg-stone-950 p-4 text-stone-50">
+      <p class="mb-1 text-[10px] uppercase tracking-wider text-stone-400">Solde total</p>
+      <p class="text-2xl font-semibold tracking-tight">
+        {{ summary.totalBalance | currency: 'EUR':'symbol':'1.2-2' }}
+      </p>
+      <div class="mt-2 flex items-center gap-1">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path
+            d="M2 8l3-3 2 2 3-4"
+            stroke="#4ade80"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ></path>
+        </svg>
+        <span class="text-[10px] text-emerald-400">{{ summary.balanceChangeLabel }}</span>
+      </div>
+    </div>
+
+    <div class="mb-4 grid gap-3 sm:grid-cols-2">
+      <div class="rounded-xl border border-stone-200 bg-white p-3">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-[10px] uppercase tracking-wider text-stone-400">Revenus du mois</p>
+            <p class="mt-1 text-lg font-semibold text-stone-950">
+              {{ summary.monthlyIncome | currency: 'EUR':'symbol':'1.0-0' }}
+            </p>
+          </div>
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M3 9l4-4 4 4"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+          </div>
+        </div>
+        <p class="mt-1 text-[10px] text-stone-500">Entrées nettes ce mois-ci</p>
+      </div>
+      <div class="rounded-xl border border-stone-200 bg-white p-3">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-[10px] uppercase tracking-wider text-stone-400">Dépenses du mois</p>
+            <p class="mt-1 text-lg font-semibold text-stone-950">
+              {{ summary.monthlyExpenses | currency: 'EUR':'symbol':'1.0-0' }}
+            </p>
+          </div>
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M3 5l4 4 4-4"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+          </div>
+        </div>
+        <p class="mt-1 text-[10px] text-stone-500">Sorties totales ce mois-ci</p>
+      </div>
+    </div>
+  }
+
+  <div class="space-y-2">
+    <p class="mb-2 text-[10px] font-semibold uppercase tracking-wider text-stone-400">
+      Projets actifs
+    </p>
+
+    @if (projects$ | async; as projects) {
+      @for (project of projects; track project.id) {
+        <div class="flex items-center gap-3 rounded-lg bg-stone-50 p-3">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" [class]="project.iconBgClass">
+            {{ project.icon }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-xs font-medium text-stone-950">{{ project.name }}</p>
+            <div class="mt-1 flex items-center gap-2">
+              <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-stone-200">
+                <div
+                  class="h-full rounded-full"
+                  [class]="project.progressClass"
+                  [style.width.%]="projectProgress(project)"
+                ></div>
+              </div>
+              <span class="shrink-0 text-[10px] text-stone-500">
+                {{ project.budgetSpent | currency: 'EUR':'symbol':'1.0-0' }} /
+                {{ project.budgetTotal | currency: 'EUR':'symbol':'1.0-0' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+    <p class="mb-2 mt-3 text-[10px] font-semibold uppercase tracking-wider text-stone-400">
+      Domaines de vie
+    </p>
+
+    @if (areas$ | async; as areas) {
+      @for (area of areas; track area.id) {
+        <div class="flex items-center gap-3 rounded-lg bg-stone-50 p-3">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg text-sm" [class]="area.iconBgClass">
+            {{ area.icon }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs font-medium text-stone-950">{{ area.name }}</p>
+            <p class="mt-0.5 text-[10px] text-stone-500">
+              {{ area.monthlySpent | currency: 'EUR':'symbol':'1.0-0' }} ce mois ·
+              <span [class]="area.trendClass">{{ area.trendLabel }}</span>
+            </p>
+          </div>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            class="text-stone-300"
+          >
+            <path
+              d="M5 3l4 4-4 4"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ></path>
+          </svg>
+        </div>
+      }
+    }
+  </div>
+</div>

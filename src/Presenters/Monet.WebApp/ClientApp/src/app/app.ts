@@ -1,13 +1,13 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
 
-import { HealthActions } from './state/health/health.actions';
+import { DashboardActions } from './state/dashboard/dashboard.actions';
 import {
-  selectHealthData,
-  selectHealthError,
-  selectHealthLoading
-} from './state/health/health.selectors';
+  selectDashboardAreas,
+  selectDashboardProjects
+} from './state/dashboard/dashboard.selectors';
 import { VersionActions } from './state/version/version.actions';
 import {
   selectVersionError,
@@ -17,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-root',
-  imports: [AsyncPipe],
+  imports: [AsyncPipe, RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -25,20 +25,14 @@ import {
 export class App implements OnInit {
   private readonly store = inject(Store);
 
-  readonly health$ = this.store.select(selectHealthData);
-  readonly loading$ = this.store.select(selectHealthLoading);
-  readonly error$ = this.store.select(selectHealthError);
   readonly version$ = this.store.select(selectVersionValue);
   readonly versionLoading$ = this.store.select(selectVersionLoading);
   readonly versionError$ = this.store.select(selectVersionError);
+  readonly projects$ = this.store.select(selectDashboardProjects);
+  readonly areas$ = this.store.select(selectDashboardAreas);
 
   ngOnInit(): void {
-    this.store.dispatch(HealthActions.loadHealth());
-    this.store.dispatch(VersionActions.loadVersion());
-  }
-
-  refresh(): void {
-    this.store.dispatch(HealthActions.loadHealth());
+    this.store.dispatch(DashboardActions.loadDashboard());
     this.store.dispatch(VersionActions.loadVersion());
   }
 }
