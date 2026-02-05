@@ -4,7 +4,7 @@
 - Read `DEVELOPERS_GUIDE.md` before starting any task.
 
 ## Validation
-- Run `dotnet build Monet.sln` and `dotnet test Monet.sln` before starting a task and after completing it.
+- If a task edits files under `src` or `tests`, run `make verification` before starting and after completing the task.
 
 ## Frontend Styling
 - Use Tailwind CSS for Angular styling.
