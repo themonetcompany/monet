@@ -5,5 +5,5 @@ namespace Monet.Application.Ports;
 
 public interface IAuthenticationGateway
 {
-    Option<ConnectedUser> GetConnectedUser();
+    Maybe<ConnectedUser> GetConnectedUser();
 }

@@ -1,16 +1,16 @@
 namespace Monet.Domain.Shared;
 
-public static class OptionExtensions
+public static class MaybeExtensions
 {
     public static async Task<TResult> MatchAsync<T, TResult>(
-        this Option<T> option,
+        this Maybe<T> maybe,
         Func<T, Task<TResult>> some,
         Func<TResult> none)
     {
-        return option switch
+        return maybe switch
         {
-            Option<T>.Some(var value) => await some(value),
-            Option<T>.None => none(),
+            Maybe<T>.Some(var value) => await some(value),
+            Maybe<T>.None => none(),
             _ => throw new InvalidOperationException()
         };
     }

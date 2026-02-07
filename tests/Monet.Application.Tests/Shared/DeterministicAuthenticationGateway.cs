@@ -13,8 +13,8 @@ public class DeterministicAuthenticationGateway : IAuthenticationGateway
         _connectedUser = connectedUser;
     }
 
-    public Option<ConnectedUser> GetConnectedUser()
+    public Maybe<ConnectedUser> GetConnectedUser()
     {
-        return Option<ConnectedUser>.Of(_connectedUser);
+        return Maybe<ConnectedUser>.Of(_connectedUser);
     }
 }
