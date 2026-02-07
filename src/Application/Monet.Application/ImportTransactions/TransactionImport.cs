@@ -1,0 +1,16 @@
+namespace Monet.Application.ImportTransactions;
+
+public record TransactionImport
+{
+    public Transaction[] Transactions { get; init; } = [];
+
+    public record Transaction
+    {
+        public required string TransactionId { get; init; }
+        public required decimal Amount { get; init; }
+        public required DateTimeOffset Date { get; init; }
+        public required string Description { get; init; }
+        public required string AccountNumber { get; init; }
+        public required string Currency { get; init; }
+    }
+}
