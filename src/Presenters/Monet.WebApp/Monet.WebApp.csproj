@@ -14,6 +14,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy" Version="10.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Application\Monet.Application\Monet.Application.csproj" />
+    <ProjectReference Include="..\..\Infrastructures\Monet.Infrastructure.Projections.InMemory\Monet.Infrastructure.Projections.InMemory.csproj" />
   </ItemGroup>
 
   <Target Name="PublishRunAngular" BeforeTargets="ComputeFilesToPublish" Condition="'$(SkipClientAppInstall)' != 'true'">

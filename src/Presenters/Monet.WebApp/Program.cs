@@ -1,4 +1,37 @@
+using Monet.Application;
+using Monet.Application.BankAccounts;
+using Monet.Application.ImportTransactions;
+using Monet.Application.Ports;
+using Monet.Application.Transactions;
+using Monet.Infrastructure.Projections.InMemory;
+using Monet.WebApp.BankAccounts;
+using Monet.WebApp.ImportTransactions;
+using Monet.WebApp.Infrastructure;
+using Monet.WebApp.Transactions;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddSingleton<InMemoryEventStore>();
+builder.Services.AddSingleton<AccountBalanceProjection>();
+builder.Services.AddSingleton<TransactionProjection>();
+builder.Services.AddSingleton<IProjection>(serviceProvider => serviceProvider.GetRequiredService<AccountBalanceProjection>());
+builder.Services.AddSingleton<IProjection>(serviceProvider => serviceProvider.GetRequiredService<TransactionProjection>());
+builder.Services.AddSingleton<IProvideAccountBalances>(serviceProvider => serviceProvider.GetRequiredService<AccountBalanceProjection>());
+builder.Services.AddSingleton<IProvideTransactions>(serviceProvider => serviceProvider.GetRequiredService<TransactionProjection>());
+builder.Services.AddSingleton<IStoreEvent>(serviceProvider => new ProjectingEventStore(
+    serviceProvider.GetRequiredService<InMemoryEventStore>(),
+    [.. serviceProvider.GetServices<IProjection>()]));
+builder.Services.AddSingleton<IAuthenticationGateway, FixedAuthenticationGateway>();
+builder.Services.AddSingleton<IClock, SystemClock>();
+builder.Services.AddSingleton<IGenerateGuid, GuidGenerator>();
+builder.Services.AddScoped<TransactionImportHandler>();
+builder.Services.AddScoped<GetAccountBalancesQueryHandler>();
+builder.Services.AddScoped<GetTransactionsQueryHandler>();
+builder.Services.AddSingleton<ITransactionImportFileParser, OfxTransactionImportFileParser>();
+builder.Services.AddSingleton<ITransactionImportFileParserSelector, TransactionImportFileParserSelector>();
 
 builder.Services.AddSpaStaticFiles(options =>
 {
@@ -7,7 +40,12 @@ builder.Services.AddSpaStaticFiles(options =>
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+else
 {
     app.UseExceptionHandler("/Error");
     app.UseSpaStaticFiles();
@@ -34,6 +72,10 @@ app.MapGet("/api/version", (IConfiguration configuration) =>
         version
     });
 });
+
+app.MapTransactionImportEndpoint();
+app.MapAccountBalanceEndpoint();
+app.MapTransactionsEndpoint();
 
 if (app.Environment.IsDevelopment())
 {

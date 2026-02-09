@@ -30,7 +30,8 @@ public class ImportTransactionTests
     public async Task Given_ImportWithTransaction_When_Import_Then_ShouldReturnSummaryWithOneTransaction()
     {
         _clock.SetDate(2026, 02, 06);
-        _guidGenerator.SetNext(Guid.NewGuid());
+        var transactionId = Guid.NewGuid();
+        _guidGenerator.SetNext(transactionId);
         _authenticationGateway.ConnectedUser(JohnDoe);
 
         _eventStore.PublishedEvents.Add(new AccountCreated
@@ -67,7 +68,69 @@ public class ImportTransactionTests
         _eventStore.ShouldContain(new TransactionImported
         {
             AggregateId = "Transaction-TRANSACTION001",
-            Id = _guidGenerator.New(),
+            Id = transactionId,
+            Version = 1,
+            Amount = new Amount(100, "EUR"),
+            Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
+            Description = "My First Transaction",
+            AccountNumber = "ACCOUNT001",
+            Timestamp = _clock.Now,
+            PublisherId = JohnDoe.Id,
+        });
+    }
+
+    [Fact]
+    public async Task Given_ImportWithAccountAndTransaction_When_Import_Then_ShouldReturnSummaryWithOneTransactionAndOneAccount()
+    {
+        _clock.SetDate(2026, 02, 06);
+        var expectedAccountId = Guid.NewGuid();
+        var expectedTransactionId = Guid.NewGuid();
+        _guidGenerator.SetNext(expectedAccountId, expectedTransactionId);
+        _authenticationGateway.ConnectedUser(JohnDoe);
+
+        var import = new TransactionImport
+        {
+            Accounts =
+            [
+                new TransactionImport.Account
+                {
+                    AccountNumber = "ACCOUNT001",
+                    Name = "My Account",
+                }
+            ],
+            Transactions =
+            [
+                new TransactionImport.Transaction
+                {
+                    TransactionId  = "TRANSACTION001",
+                    Amount = 100,
+                    Currency = "EUR",
+                    Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
+                    Description = "My First Transaction",
+                    AccountNumber = "ACCOUNT001"
+                }
+            ]
+        };
+
+        var result = await Handler.HandleAsync(import, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.ImportedAccounts.Should().Be(1);
+        result.Value.ImportedTransactions.Should().Be(1);
+        _eventStore.ShouldContain(new AccountImported
+        {
+            AggregateId = "Account-ACCOUNT001",
+            Id = expectedAccountId,
+            Version = 1,
+            AccountNumber = "ACCOUNT001",
+            Name = "My Account",
+            Timestamp = _clock.Now,
+            PublisherId = JohnDoe.Id,
+        });
+        _eventStore.ShouldContain(new TransactionImported
+        {
+            AggregateId = "Transaction-TRANSACTION001",
+            Id = expectedTransactionId,
             Version = 1,
             Amount = new Amount(100, "EUR"),
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
@@ -99,7 +162,7 @@ public class ImportTransactionTests
         _eventStore.PublishedEvents.Add(new TransactionImported
         {
             AggregateId = "Transaction-TRANSACTION001",
-            Id = _guidGenerator.New(),
+            Id = Guid.NewGuid(),
             Version = 1,
             Amount = new Amount(100, "EUR"),
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
@@ -136,7 +199,9 @@ public class ImportTransactionTests
     public async Task Given_ImportWithTwoTransactions_When_Import_Then_ShouldReturnSummaryWithTwoTransactions()
     {
         _clock.SetDate(2026, 02, 06);
-        _guidGenerator.SetNext(Guid.NewGuid());
+        var transactionId1 = Guid.NewGuid();
+        var transactionId2 = Guid.NewGuid();
+        _guidGenerator.SetNext(transactionId1, transactionId2);
         _authenticationGateway.ConnectedUser(JohnDoe);
 
         _eventStore.PublishedEvents.Add(new AccountCreated
@@ -182,7 +247,7 @@ public class ImportTransactionTests
         _eventStore.ShouldContain(new TransactionImported
         {
             AggregateId = "Transaction-TRANSACTION001",
-            Id = _guidGenerator.New(),
+            Id = transactionId1,
             Version = 1,
             Amount = new Amount(100, "EUR"),
             Date = new DateTimeOffset(2023, 02, 04, 14, 54, 12, TimeSpan.Zero),
@@ -194,7 +259,7 @@ public class ImportTransactionTests
         _eventStore.ShouldContain(new TransactionImported
         {
             AggregateId = "Transaction-TRANSACTION002",
-            Id = _guidGenerator.New(),
+            Id = transactionId2,
             Version = 1,
             Amount = new Amount(new decimal(54.5), "EUR"),
             Date = new DateTimeOffset(2026, 02, 5, 08, 40, 23, TimeSpan.Zero),
@@ -277,7 +342,8 @@ public class ImportTransactionTests
     public async Task Given_ImportWithNewAndAlreadyImportedTransaction_When_Import_Then_ShouldReturnSummaryWithOneImportedAndOneIgnored()
     {
         _clock.SetDate(2026, 02, 06);
-        _guidGenerator.SetNext(Guid.NewGuid());
+        var transactionId = Guid.NewGuid();
+        _guidGenerator.SetNext(transactionId);
         _authenticationGateway.ConnectedUser(JohnDoe);
 
         _eventStore.PublishedEvents.Add(new AccountCreated
@@ -294,7 +360,7 @@ public class ImportTransactionTests
         _eventStore.PublishedEvents.Add(new TransactionImported
         {
             AggregateId = "Transaction-TRANSACTION001",
-            Id = _guidGenerator.New(),
+            Id = Guid.NewGuid(),
             Version = 1,
             Amount = new Amount(100, "EUR"),
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
@@ -337,7 +403,7 @@ public class ImportTransactionTests
         _eventStore.ShouldContain(new TransactionImported
         {
             AggregateId = "Transaction-TRANSACTION002",
-            Id = _guidGenerator.New(),
+            Id = transactionId,
             Version = 1,
             Amount = new Amount(new decimal(54.5), "EUR"),
             Date = new DateTimeOffset(2026, 02, 05, 08, 40, 23, TimeSpan.Zero),
@@ -352,7 +418,8 @@ public class ImportTransactionTests
     public async Task Given_ImportWithSecondTransactionOnNonExistentAccount_When_Import_Then_ShouldFailAndFirstTransactionIsAlreadyPublished()
     {
         _clock.SetDate(2026, 02, 06);
-        _guidGenerator.SetNext(Guid.NewGuid());
+        var transactionId = Guid.NewGuid();
+        _guidGenerator.SetNext(transactionId);
         _authenticationGateway.ConnectedUser(JohnDoe);
 
         _eventStore.PublishedEvents.Add(new AccountCreated
@@ -398,7 +465,7 @@ public class ImportTransactionTests
         _eventStore.ShouldContain(new TransactionImported
         {
             AggregateId = "Transaction-TRANSACTION001",
-            Id = _guidGenerator.New(),
+            Id = transactionId,
             Version = 1,
             Amount = new Amount(100, "EUR"),
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
@@ -413,7 +480,9 @@ public class ImportTransactionTests
     public async Task Given_ImportWithTransactionsOnDifferentAccounts_When_Import_Then_ShouldImportAll()
     {
         _clock.SetDate(2026, 02, 06);
-        _guidGenerator.SetNext(Guid.NewGuid());
+        var transactionId1 = Guid.NewGuid();
+        var transactionId2 = Guid.NewGuid();
+        _guidGenerator.SetNext(transactionId1, transactionId2);
         _authenticationGateway.ConnectedUser(JohnDoe);
 
         _eventStore.PublishedEvents.Add(new AccountCreated
@@ -470,7 +539,7 @@ public class ImportTransactionTests
         _eventStore.ShouldContain(new TransactionImported
         {
             AggregateId = "Transaction-TRANSACTION001",
-            Id = _guidGenerator.New(),
+            Id = transactionId1,
             Version = 1,
             Amount = new Amount(100, "EUR"),
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
@@ -482,7 +551,7 @@ public class ImportTransactionTests
         _eventStore.ShouldContain(new TransactionImported
         {
             AggregateId = "Transaction-TRANSACTION002",
-            Id = _guidGenerator.New(),
+            Id = transactionId2,
             Version = 1,
             Amount = new Amount(new decimal(54.5), "EUR"),
             Date = new DateTimeOffset(2026, 02, 05, 08, 40, 23, TimeSpan.Zero),

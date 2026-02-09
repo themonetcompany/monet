@@ -3,6 +3,7 @@ namespace Monet.Application.ImportTransactions;
 public record TransactionImport
 {
     public Transaction[] Transactions { get; init; } = [];
+    public Account[] Accounts { get; init; } = [];
 
     public record Transaction
     {
@@ -12,5 +13,11 @@ public record TransactionImport
         public required string Description { get; init; }
         public required string AccountNumber { get; init; }
         public required string Currency { get; init; }
+    }
+
+    public record Account
+    {
+        public required string AccountNumber { get; init; }
+        public required string Name { get; init; }
     }
 }

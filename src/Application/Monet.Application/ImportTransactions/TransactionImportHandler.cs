@@ -11,8 +11,24 @@ public class TransactionImportHandler(IStoreEvent eventStore, IAuthenticationGat
         return await authenticationGateway.GetConnectedUser()
             .MatchAsync(async connectedUser =>
             {
+                var importedAccountCount = 0;
                 var importedTransactionCount = 0;
                 var ignoredTransactionCount = 0;
+
+                foreach (var account in import.Accounts)
+                {
+                    await eventStore.PublishAsync(new AccountImported
+                    {
+                        AccountNumber = account.AccountNumber,
+                        Name = account.Name,
+                        AggregateId = $"Account-{account.AccountNumber}",
+                        Id = guidGenerator.New(),
+                        Version = 1,
+                        Timestamp = clock.Now,
+                        PublisherId = connectedUser.Id,
+                    });
+                    importedAccountCount++;
+                }
 
                 foreach (var transaction in import.Transactions)
                 {
@@ -43,6 +59,7 @@ public class TransactionImportHandler(IStoreEvent eventStore, IAuthenticationGat
 
                 return Result<TransactionImportResult>.Success(new TransactionImportResult
                 {
+                    ImportedAccounts = importedAccountCount,
                     ImportedTransactions = importedTransactionCount,
                     IgnoredTransactions = ignoredTransactionCount,
                 });

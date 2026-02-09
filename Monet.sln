@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monet.Infrastructure.Projec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monet.Infrastructure.Projections.InMemory.Tests", "tests\Monet.Infrastructure.Projections.InMemory.Tests\Monet.Infrastructure.Projections.InMemory.Tests.csproj", "{0F03E35F-C3C0-4AB6-94A9-39E293FDEEAB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monet.WebApp.Tests", "tests\Monet.WebApp.Tests\Monet.WebApp.Tests.csproj", "{9D50D968-D8A5-42EE-A0A1-159562966B6E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,6 +123,18 @@ Global
 		{0F03E35F-C3C0-4AB6-94A9-39E293FDEEAB}.Release|x64.Build.0 = Release|Any CPU
 		{0F03E35F-C3C0-4AB6-94A9-39E293FDEEAB}.Release|x86.ActiveCfg = Release|Any CPU
 		{0F03E35F-C3C0-4AB6-94A9-39E293FDEEAB}.Release|x86.Build.0 = Release|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Debug|x64.Build.0 = Debug|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Debug|x86.Build.0 = Debug|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Release|x64.ActiveCfg = Release|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Release|x64.Build.0 = Release|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Release|x86.ActiveCfg = Release|Any CPU
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -136,5 +150,6 @@ Global
 		{704FE57B-DEE1-0577-4379-C11B895E77D2} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{803F1C89-E366-4169-85AA-5BC16054F052} = {704FE57B-DEE1-0577-4379-C11B895E77D2}
 		{0F03E35F-C3C0-4AB6-94A9-39E293FDEEAB} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{9D50D968-D8A5-42EE-A0A1-159562966B6E} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

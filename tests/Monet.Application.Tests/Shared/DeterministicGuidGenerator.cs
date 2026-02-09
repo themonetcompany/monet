@@ -4,16 +4,18 @@ namespace Monet.Application.Tests.Shared;
 
 public class DeterministicGuidGenerator : IGenerateGuid
 {
-    private Guid? _next;
+    private Queue<Guid> _guids = new();
 
-    public Guid SetNext(Guid guid)
+    public void SetNext(params Guid[] guids)
     {
-        _next = guid;
-        return guid;
+        foreach (var guid in guids)
+        {
+            _guids.Enqueue(guid);
+        }
     }
 
     public Guid New()
     {
-        return _next ?? throw new InvalidOperationException("No next GUID set");
+        return _guids.Dequeue();
     }
 }
