@@ -19,5 +19,13 @@ public record TransactionImport
     {
         public required string AccountNumber { get; init; }
         public required string Name { get; init; }
+        public required Balance[] Balances { get; init; } = [];
+
+        public record Balance
+        {
+            public required DateTimeOffset Date { get; init; }
+            public required decimal Amount { get; init; }
+            public required string Currency { get; init; }
+        }
     }
 }

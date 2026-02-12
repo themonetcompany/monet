@@ -28,6 +28,21 @@ public class TransactionImportHandler(IStoreEvent eventStore, IAuthenticationGat
                         PublisherId = connectedUser.Id,
                     });
                     importedAccountCount++;
+
+                    var version = 2;
+                    foreach (var balance in account.Balances)
+                    {
+                        await eventStore.PublishAsync(new DeclaredBalance
+                        {
+                            AggregateId = $"Account-{account.AccountNumber}",
+                            Id = guidGenerator.New(),
+                            Version = version++,
+                            Balance = new Amount(balance.Amount, balance.Currency),
+                            Date = balance.Date,
+                            Timestamp = clock.Now,
+                            PublisherId = connectedUser.Id,
+                        });
+                    }
                 }
 
                 foreach (var transaction in import.Transactions)
@@ -35,7 +50,7 @@ public class TransactionImportHandler(IStoreEvent eventStore, IAuthenticationGat
                     if (!await eventStore.HasAsync($"Account-{transaction.AccountNumber}", cancellationToken))
                         return Result<TransactionImportResult>.Failure("ACCOUNT_NOT_FOUND");
 
-                    var transactionAggregateId = $"Transaction-{transaction.TransactionId}";
+                    var transactionAggregateId = $"Transaction-{transaction.AccountNumber}-{transaction.TransactionId}";
                     if (await eventStore.HasAsync(transactionAggregateId, cancellationToken))
                     {
                         ignoredTransactionCount++;

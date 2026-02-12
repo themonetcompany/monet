@@ -10,6 +10,8 @@ import { provideStore } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 
 import { routes } from './app.routes';
+import { DashboardEffects } from './state/dashboard/dashboard.effects';
+import { dashboardFeatureKey, dashboardReducer } from './state/dashboard/dashboard.reducer';
 import { HealthEffects } from './state/health/health.effects';
 import { healthFeatureKey, healthReducer } from './state/health/health.reducer';
 import { VersionEffects } from './state/version/version.effects';
@@ -21,10 +23,11 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(),
     provideStore({
+      [dashboardFeatureKey]: dashboardReducer,
       [healthFeatureKey]: healthReducer,
       [versionFeatureKey]: versionReducer
     }),
-    provideEffects(HealthEffects, VersionEffects),
+    provideEffects(DashboardEffects, HealthEffects, VersionEffects),
     provideStoreDevtools({
       maxAge: 25,
       logOnly: !isDevMode()

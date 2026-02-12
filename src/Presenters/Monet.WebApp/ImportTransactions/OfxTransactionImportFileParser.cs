@@ -8,6 +8,15 @@ namespace Monet.WebApp.ImportTransactions;
 
 public partial class OfxTransactionImportFileParser : ITransactionImportFileParser
 {
+    [GeneratedRegex("<STMTRS>(.*?)</STMTRS>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex StatementResponseRegex();
+
+    [GeneratedRegex("<LEDGERBAL>(.*?)</LEDGERBAL>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex LedgerBalanceRegex();
+
+    [GeneratedRegex("<AVAILBAL>(.*?)</AVAILBAL>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static partial Regex AvailableBalanceRegex();
+
     [GeneratedRegex("<STMTTRN>(.*?)</STMTTRN>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
     private static partial Regex StatementRegex();
 
@@ -45,54 +54,85 @@ public partial class OfxTransactionImportFileParser : ITransactionImportFilePars
             return Result<TransactionImport>.Failure("OFX_CURRENCY_NOT_FOUND");
         }
 
-        var defaultAccountNumber = ReadTag(content, "ACCTID");
-        var statements = StatementRegex().Matches(content);
+        var statementResponses = StatementResponseRegex().Matches(content);
 
-        if (statements.Count == 0)
+        if (statementResponses.Count == 0)
         {
             return Result<TransactionImport>.Failure("OFX_NO_TRANSACTION_FOUND");
         }
 
-        var transactions = new List<TransactionImport.Transaction>(statements.Count);
+        var transactions = new List<TransactionImport.Transaction>();
+        var accountBalances = new Dictionary<string, List<TransactionImport.Account.Balance>>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (Match statement in statements)
+        foreach (Match statementResponse in statementResponses)
         {
-            var transaction = statement.Groups[1].Value;
-            var transactionId = ReadTag(transaction, "FITID");
-            var amountAsString = ReadTag(transaction, "TRNAMT");
-            var postedDateAsString = ReadTag(transaction, "DTPOSTED");
-            var accountNumber = ReadTag(transaction, "ACCTID") ?? defaultAccountNumber;
-            var description = ReadTag(transaction, "NAME") ?? ReadTag(transaction, "MEMO") ?? transactionId;
-
-            if (string.IsNullOrWhiteSpace(transactionId)
-                || string.IsNullOrWhiteSpace(amountAsString)
-                || string.IsNullOrWhiteSpace(postedDateAsString)
-                || string.IsNullOrWhiteSpace(accountNumber)
-                || string.IsNullOrWhiteSpace(description)
-                || !TryParseAmount(amountAsString, out var amount)
-                || !TryParseDate(postedDateAsString, out var postedDate))
+            var statementContent = statementResponse.Groups[1].Value;
+            var statementAccountNumber = ReadTag(statementContent, "ACCTID");
+            if (!string.IsNullOrWhiteSpace(statementAccountNumber))
             {
-                return Result<TransactionImport>.Failure("OFX_INVALID_TRANSACTION");
+                if (!accountBalances.TryGetValue(statementAccountNumber, out var balances))
+                {
+                    balances = [];
+                    accountBalances[statementAccountNumber] = balances;
+                }
+
+                if (TryReadLedgerBalance(statementContent, currency, out var balance))
+                    balances.Add(balance);
+                else if(TryReadAvailableBalance(statementContent, currency, out var availableBalance))
+                    balances.Add(availableBalance);
             }
 
-            transactions.Add(new TransactionImport.Transaction
+            var statements = StatementRegex().Matches(statementContent);
+
+            foreach (Match statement in statements)
             {
-                TransactionId = transactionId,
-                Amount = amount,
-                Date = postedDate,
-                Description = description,
-                AccountNumber = accountNumber,
-                Currency = currency,
-            });
+                var transaction = statement.Groups[1].Value;
+                var transactionId = ReadTag(transaction, "FITID");
+                var amountAsString = ReadTag(transaction, "TRNAMT");
+                var postedDateAsString = ReadTag(transaction, "DTPOSTED");
+                var transactionType = ReadTag(transaction, "TRNTYPE");
+                var accountNumber = ReadTag(transaction, "ACCTID") ?? statementAccountNumber;
+                var description = ReadTag(transaction, "NAME") ?? ReadTag(transaction, "MEMO") ?? transactionId;
+
+                if (string.IsNullOrWhiteSpace(transactionId)
+                    || string.IsNullOrWhiteSpace(amountAsString)
+                    || string.IsNullOrWhiteSpace(postedDateAsString)
+                    || string.IsNullOrWhiteSpace(accountNumber)
+                    || string.IsNullOrWhiteSpace(description)
+                    || !TryParseAmount(amountAsString, transactionType, out var amount)
+                    || !TryParseDate(postedDateAsString, out var postedDate))
+                {
+                    return Result<TransactionImport>.Failure("OFX_INVALID_TRANSACTION");
+                }
+
+                transactions.Add(new TransactionImport.Transaction
+                {
+                    TransactionId = transactionId,
+                    Amount = amount,
+                    Date = postedDate,
+                    Description = description,
+                    AccountNumber = accountNumber,
+                    Currency = currency,
+                });
+            }
+        }
+
+        if (transactions.Count == 0)
+        {
+            return Result<TransactionImport>.Failure("OFX_NO_TRANSACTION_FOUND");
         }
 
         var accounts = transactions
             .Select(transaction => transaction.AccountNumber)
+            .Concat(accountBalances.Keys)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Select(accountNumber => new TransactionImport.Account
             {
                 AccountNumber = accountNumber,
                 Name = accountNumber,
+                Balances = accountBalances.TryGetValue(accountNumber, out var balances)
+                    ? [.. balances]
+                    : [],
             })
             .ToArray();
 
@@ -111,15 +151,28 @@ public partial class OfxTransactionImportFileParser : ITransactionImportFilePars
             .Trim();
     }
 
-    private static bool TryParseAmount(string rawValue, out decimal amount)
+    private static bool TryParseAmount(string rawValue, string? transactionType, out decimal amount)
     {
         var normalized = rawValue.Replace(',', '.');
 
-        return decimal.TryParse(
+        var hasAmount = decimal.TryParse(
             normalized,
-            NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
+            NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands,
             CultureInfo.InvariantCulture,
             out amount);
+
+        if (!hasAmount)
+        {
+            return false;
+        }
+
+        var type = transactionType?.Trim().ToUpperInvariant();
+        if (amount > 0 && type is "DEBIT" or "PAYMENT" or "DIRECTDEBIT" or "FEE" or "ATM" or "WITHDRAWAL")
+        {
+            amount *= -1;
+        }
+
+        return true;
     }
 
     private static bool TryParseDate(string rawValue, out DateTimeOffset date)
@@ -148,5 +201,73 @@ public partial class OfxTransactionImportFileParser : ITransactionImportFilePars
         {
             return false;
         }
+    }
+
+    private static bool TryReadLedgerBalance(
+        string statementContent,
+        string currency,
+        out TransactionImport.Account.Balance balance)
+    {
+        balance = default!;
+
+        var ledgerBalanceMatch = LedgerBalanceRegex().Match(statementContent);
+        if (!ledgerBalanceMatch.Success)
+        {
+            return false;
+        }
+
+        var ledgerBalanceContent = ledgerBalanceMatch.Groups[1].Value;
+        var amountAsString = ReadTag(ledgerBalanceContent, "BALAMT");
+        var dateAsString = ReadTag(ledgerBalanceContent, "DTASOF");
+
+        if (string.IsNullOrWhiteSpace(amountAsString)
+            || string.IsNullOrWhiteSpace(dateAsString)
+            || !TryParseAmount(amountAsString, null, out var amount)
+            || !TryParseDate(dateAsString, out var date))
+        {
+            return false;
+        }
+
+        balance = new TransactionImport.Account.Balance
+        {
+            Amount = amount,
+            Date = date,
+            Currency = currency
+        };
+        return true;
+    }
+
+    private static bool TryReadAvailableBalance(
+        string statementContent,
+        string currency,
+        out TransactionImport.Account.Balance balance)
+    {
+        balance = default!;
+
+        var ledgerBalanceMatch = AvailableBalanceRegex().Match(statementContent);
+        if (!ledgerBalanceMatch.Success)
+        {
+            return false;
+        }
+
+        var ledgerBalanceContent = ledgerBalanceMatch.Groups[1].Value;
+        var amountAsString = ReadTag(ledgerBalanceContent, "BALAMT");
+        var dateAsString = ReadTag(ledgerBalanceContent, "DTASOF");
+
+        if (string.IsNullOrWhiteSpace(amountAsString)
+            || string.IsNullOrWhiteSpace(dateAsString)
+            || !TryParseAmount(amountAsString, null, out var amount)
+            || !TryParseDate(dateAsString, out var date))
+        {
+            return false;
+        }
+
+        balance = new TransactionImport.Account.Balance
+        {
+            Amount = amount,
+            Date = date,
+            Currency = currency
+        };
+        return true;
     }
 }
