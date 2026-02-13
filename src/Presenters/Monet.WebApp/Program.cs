@@ -17,10 +17,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<InMemoryEventStore>();
 builder.Services.AddSingleton<AccountBalanceProjection>();
 builder.Services.AddSingleton<TransactionProjection>();
+builder.Services.AddSingleton<CategoryProjection>();
 builder.Services.AddSingleton<IProjection>(serviceProvider => serviceProvider.GetRequiredService<AccountBalanceProjection>());
 builder.Services.AddSingleton<IProjection>(serviceProvider => serviceProvider.GetRequiredService<TransactionProjection>());
+builder.Services.AddSingleton<IProjection>(serviceProvider => serviceProvider.GetRequiredService<CategoryProjection>());
 builder.Services.AddSingleton<IProvideAccountBalances>(serviceProvider => serviceProvider.GetRequiredService<AccountBalanceProjection>());
 builder.Services.AddSingleton<IProvideTransactions>(serviceProvider => serviceProvider.GetRequiredService<TransactionProjection>());
+builder.Services.AddSingleton<IProvideTransactionCategories>(serviceProvider => serviceProvider.GetRequiredService<CategoryProjection>());
 builder.Services.AddSingleton<IStoreEvent>(serviceProvider => new ProjectingEventStore(
     serviceProvider.GetRequiredService<InMemoryEventStore>(),
     [.. serviceProvider.GetServices<IProjection>()]));
@@ -30,6 +33,9 @@ builder.Services.AddSingleton<IGenerateGuid, GuidGenerator>();
 builder.Services.AddScoped<TransactionImportHandler>();
 builder.Services.AddScoped<GetAccountBalancesQueryHandler>();
 builder.Services.AddScoped<GetTransactionsQueryHandler>();
+builder.Services.AddScoped<GetTransactionCategoriesQueryHandler>();
+builder.Services.AddScoped<AssignTransactionCategoryHandler>();
+builder.Services.AddSingleton<CategoryBootstrapper>();
 builder.Services.AddSingleton<ITransactionImportFileParser, OfxTransactionImportFileParser>();
 builder.Services.AddSingleton<ITransactionImportFileParserSelector, TransactionImportFileParserSelector>();
 
@@ -76,6 +82,14 @@ app.MapGet("/api/version", (IConfiguration configuration) =>
 app.MapTransactionImportEndpoint();
 app.MapAccountBalanceEndpoint();
 app.MapTransactionsEndpoint();
+app.MapTransactionCategoriesEndpoint();
+app.MapAssignTransactionCategoryEndpoint();
+
+using (var scope = app.Services.CreateScope())
+{
+    var bootstrapper = scope.ServiceProvider.GetRequiredService<CategoryBootstrapper>();
+    await bootstrapper.BootstrapAsync(CancellationToken.None);
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -101,3 +115,5 @@ else
 }
 
 app.Run();
+
+public partial class Program;

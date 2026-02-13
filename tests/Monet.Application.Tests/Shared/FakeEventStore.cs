@@ -19,6 +19,17 @@ public class FakeEventStore : IStoreEvent
         return Task.FromResult(PublishedEvents.Any(e => e.AggregateId == s));
     }
 
+    public Task<int> GetCurrentVersionAsync(string aggregateId, CancellationToken cancellationToken)
+    {
+        var currentVersion = PublishedEvents
+            .Where(domainEvent => domainEvent.AggregateId == aggregateId)
+            .Select(domainEvent => domainEvent.Version)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return Task.FromResult(currentVersion);
+    }
+
     public void ShouldContain(IDomainEvent domainEvent)
     {
         PublishedEvents.Should().Contain(domainEvent);

@@ -86,6 +86,7 @@
                 <th class="px-4 py-3">Description</th>
                 <th class="px-4 py-3">Compte</th>
                 <th class="px-4 py-3">Montant</th>
+                <th class="px-4 py-3">Catégorie</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-stone-100">
@@ -99,10 +100,29 @@
                   <td class="px-4 py-3">
                     {{ transaction.amount.value | currency: transaction.amount.currency : 'symbol' : '1.2-2' }}
                   </td>
+                  <td class="px-4 py-3">
+                    @if (transaction.flowType === 'Neutral') {
+                      <span class="text-sm text-stone-400">Non catégorisable</span>
+                    } @else {
+                      @let transactionCategories = categoryOptionsForTransaction(transaction) | async;
+                      <select
+                        class="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-500"
+                        [(ngModel)]="transaction.categoryId"
+                        (change)="updateTransactionCategory(transaction, $event)"
+                      >
+                        <option value="null">Sans catégorie</option>
+                        @for (category of transactionCategories; track category.categoryId) {
+                          <option [value]="category.categoryId">
+                            {{ category.name }}
+                          </option>
+                        }
+                      </select>
+                    }
+                  </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td class="px-4 py-4 text-stone-500" colspan="4">
+                  <td class="px-4 py-4 text-stone-500" colspan="5">
                     Aucune transaction disponible.
                   </td>
                 </tr>

@@ -27,6 +27,7 @@ public class TransactionProjectionTests
             Date = new DateTimeOffset(2026, 02, 06, 0, 0, 0, TimeSpan.Zero),
             Description = "Grocery shopping",
             AccountNumber = "ACC001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = DateTimeOffset.UtcNow,
             PublisherId = Guid.NewGuid(),
         });
@@ -39,6 +40,9 @@ public class TransactionProjectionTests
         result[0].Date.Should().Be(new DateTimeOffset(2026, 02, 06, 0, 0, 0, TimeSpan.Zero));
         result[0].Description.Should().Be("Grocery shopping");
         result[0].AccountNumber.Should().Be("ACC001");
+        result[0].FlowType.Should().Be("Income");
+        result[0].CategoryId.Should().BeNull();
+        result[0].CategoryName.Should().BeNull();
     }
 
     [Fact]
@@ -53,6 +57,7 @@ public class TransactionProjectionTests
             Date = new DateTimeOffset(2026, 02, 06, 0, 0, 0, TimeSpan.Zero),
             Description = "First",
             AccountNumber = "ACC001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = DateTimeOffset.UtcNow,
             PublisherId = Guid.NewGuid(),
         });
@@ -66,6 +71,7 @@ public class TransactionProjectionTests
             Date = new DateTimeOffset(2026, 02, 07, 0, 0, 0, TimeSpan.Zero),
             Description = "Second",
             AccountNumber = "ACC001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = DateTimeOffset.UtcNow,
             PublisherId = Guid.NewGuid(),
         });
@@ -94,5 +100,89 @@ public class TransactionProjectionTests
         var result = await _projection.GetAllAsync();
 
         result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Given_CategoryAssigned_When_GetById_Then_ShouldReturnTransactionWithCategory()
+    {
+        await _projection.ApplyAsync(new TransactionImported
+        {
+            AggregateId = "Transaction-TX001",
+            Id = Guid.NewGuid(),
+            Version = 1,
+            Amount = new Amount(100, "EUR"),
+            Date = new DateTimeOffset(2026, 02, 06, 0, 0, 0, TimeSpan.Zero),
+            Description = "Grocery shopping",
+            AccountNumber = "ACC001",
+            FlowType = TransactionFlowType.Expense,
+            Timestamp = DateTimeOffset.UtcNow,
+            PublisherId = Guid.NewGuid(),
+        });
+
+        await _projection.ApplyAsync(new TransactionCategoryAssigned
+        {
+            AggregateId = "Transaction-TX001",
+            TransactionAggregateId = "Transaction-TX001",
+            CategoryId = "Category-Expense-Alimentation",
+            CategoryName = "Alimentation",
+            Id = Guid.NewGuid(),
+            Version = 2,
+            Timestamp = DateTimeOffset.UtcNow,
+            PublisherId = Guid.NewGuid(),
+        });
+
+        var result = await _projection.GetByIdAsync("Transaction-TX001");
+
+        result.Should().NotBeNull();
+        result!.CategoryId.Should().Be("Category-Expense-Alimentation");
+        result.CategoryName.Should().Be("Alimentation");
+    }
+
+    [Fact]
+    public async Task Given_CategoryCleared_When_GetById_Then_ShouldReturnTransactionWithoutCategory()
+    {
+        await _projection.ApplyAsync(new TransactionImported
+        {
+            AggregateId = "Transaction-TX001",
+            Id = Guid.NewGuid(),
+            Version = 1,
+            Amount = new Amount(100, "EUR"),
+            Date = new DateTimeOffset(2026, 02, 06, 0, 0, 0, TimeSpan.Zero),
+            Description = "Grocery shopping",
+            AccountNumber = "ACC001",
+            FlowType = TransactionFlowType.Expense,
+            Timestamp = DateTimeOffset.UtcNow,
+            PublisherId = Guid.NewGuid(),
+        });
+
+        await _projection.ApplyAsync(new TransactionCategoryAssigned
+        {
+            AggregateId = "Transaction-TX001",
+            TransactionAggregateId = "Transaction-TX001",
+            CategoryId = "Category-Expense-Alimentation",
+            CategoryName = "Alimentation",
+            Id = Guid.NewGuid(),
+            Version = 2,
+            Timestamp = DateTimeOffset.UtcNow,
+            PublisherId = Guid.NewGuid(),
+        });
+
+        await _projection.ApplyAsync(new TransactionCategoryAssigned
+        {
+            AggregateId = "Transaction-TX001",
+            TransactionAggregateId = "Transaction-TX001",
+            CategoryId = null,
+            CategoryName = null,
+            Id = Guid.NewGuid(),
+            Version = 3,
+            Timestamp = DateTimeOffset.UtcNow,
+            PublisherId = Guid.NewGuid(),
+        });
+
+        var result = await _projection.GetByIdAsync("Transaction-TX001");
+
+        result.Should().NotBeNull();
+        result!.CategoryId.Should().BeNull();
+        result.CategoryName.Should().BeNull();
     }
 }

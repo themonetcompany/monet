@@ -24,6 +24,9 @@ public class GetTransactionsQueryHandlerTests
             Date = new DateTimeOffset(2026, 02, 06, 0, 0, 0, TimeSpan.Zero),
             Description = "Grocery shopping",
             AccountNumber = "ACC001",
+            FlowType = "Income",
+            CategoryId = null,
+            CategoryName = null,
         });
 
         var result = await Handler.HandleAsync(CancellationToken.None);
@@ -55,6 +58,11 @@ public class GetTransactionsQueryHandlerTests
         public Task<IReadOnlyList<TransactionReadModel>> GetAllAsync()
         {
             return Task.FromResult<IReadOnlyList<TransactionReadModel>>(Transactions.AsReadOnly());
+        }
+
+        public Task<TransactionReadModel?> GetByIdAsync(string transactionId)
+        {
+            return Task.FromResult(Transactions.FirstOrDefault(transaction => transaction.TransactionId == transactionId));
         }
     }
 }

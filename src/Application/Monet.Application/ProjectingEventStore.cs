@@ -19,4 +19,9 @@ public class ProjectingEventStore(IStoreEvent innerStore, IProjection[] projecti
     {
         return innerStore.HasAsync(aggregateId, cancellationToken);
     }
+
+    public Task<int> GetCurrentVersionAsync(string aggregateId, CancellationToken cancellationToken)
+    {
+        return innerStore.GetCurrentVersionAsync(aggregateId, cancellationToken);
+    }
 }

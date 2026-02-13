@@ -63,6 +63,18 @@ public class ProjectingEventStoreTests
         result.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task Given_AggregateId_When_GetCurrentVersion_Then_ShouldDelegateToInnerStore()
+    {
+        var store = new ProjectingEventStore(_innerStore, [new SpyProjection()]);
+
+        _innerStore.PublishedEvents.Add(ATransactionImported() with { Version = 3 });
+
+        var result = await store.GetCurrentVersionAsync("Transaction-TX001", CancellationToken.None);
+
+        result.Should().Be(3);
+    }
+
     private static TransactionImported ATransactionImported() => new()
     {
         AggregateId = "Transaction-TX001",
@@ -72,6 +84,7 @@ public class ProjectingEventStoreTests
         Date = new DateTimeOffset(2026, 02, 06, 0, 0, 0, TimeSpan.Zero),
         Description = "Test",
         AccountNumber = "ACC001",
+        FlowType = TransactionFlowType.Income,
         Timestamp = DateTimeOffset.UtcNow,
         PublisherId = Guid.NewGuid(),
     };

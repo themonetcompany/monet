@@ -27,6 +27,7 @@ public class AccountBalanceProjectionTests
             Date = new DateTimeOffset(2026, 02, 06, 0, 0, 0, TimeSpan.Zero),
             Description = "Grocery shopping",
             AccountNumber = "ACC001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = DateTimeOffset.UtcNow,
             PublisherId = Guid.NewGuid(),
         });
@@ -51,6 +52,7 @@ public class AccountBalanceProjectionTests
             Date = new DateTimeOffset(2026, 02, 06, 0, 0, 0, TimeSpan.Zero),
             Description = "First",
             AccountNumber = "ACC001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = DateTimeOffset.UtcNow,
             PublisherId = Guid.NewGuid(),
         });
@@ -64,6 +66,7 @@ public class AccountBalanceProjectionTests
             Date = new DateTimeOffset(2026, 02, 07, 0, 0, 0, TimeSpan.Zero),
             Description = "Second",
             AccountNumber = "ACC001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = DateTimeOffset.UtcNow,
             PublisherId = Guid.NewGuid(),
         });
@@ -87,6 +90,7 @@ public class AccountBalanceProjectionTests
             Date = new DateTimeOffset(2026, 02, 06, 0, 0, 0, TimeSpan.Zero),
             Description = "First",
             AccountNumber = "ACC001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = DateTimeOffset.UtcNow,
             PublisherId = Guid.NewGuid(),
         });
@@ -100,6 +104,7 @@ public class AccountBalanceProjectionTests
             Date = new DateTimeOffset(2026, 02, 07, 0, 0, 0, TimeSpan.Zero),
             Description = "Second",
             AccountNumber = "ACC002",
+            FlowType = TransactionFlowType.Income,
             Timestamp = DateTimeOffset.UtcNow,
             PublisherId = Guid.NewGuid(),
         });
@@ -245,6 +250,7 @@ public class AccountBalanceProjectionTests
             Date = new DateTimeOffset(2026, 02, day, 0, 0, 0, TimeSpan.Zero),
             Description = $"Transaction {id}",
             AccountNumber = accountNumber,
+            FlowType = amount < 0 ? TransactionFlowType.Expense : amount > 0 ? TransactionFlowType.Income : TransactionFlowType.Neutral,
             Timestamp = DateTimeOffset.UtcNow,
             PublisherId = Guid.NewGuid()
         };

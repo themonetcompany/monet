@@ -15,6 +15,19 @@ export const selectDashboardTransactions = createSelector(
   (state) => state.transactions
 );
 
+export const selectDashboardCategories = createSelector(
+  selectDashboardState,
+  (state) => state.categories
+);
+
+export const selectDashboardExpenseCategories = createSelector(selectDashboardCategories, (categories) =>
+  categories.filter((category) => category.flowType === 'Expense')
+);
+
+export const selectDashboardIncomeCategories = createSelector(selectDashboardCategories, (categories) =>
+  categories.filter((category) => category.flowType === 'Income')
+);
+
 export const selectDashboardLoading = createSelector(
   selectDashboardState,
   (state) => state.loading

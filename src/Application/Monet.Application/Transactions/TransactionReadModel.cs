@@ -9,4 +9,7 @@ public record TransactionReadModel
     public required DateTimeOffset Date { get; init; }
     public required string Description { get; init; }
     public required string AccountNumber { get; init; }
+    public required string FlowType { get; init; }
+    public string? CategoryId { get; init; }
+    public string? CategoryName { get; init; }
 }

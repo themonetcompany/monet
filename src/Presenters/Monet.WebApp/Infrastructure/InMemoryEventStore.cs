@@ -17,4 +17,15 @@ public class InMemoryEventStore : IStoreEvent
     {
         return Task.FromResult(_events.Any(domainEvent => domainEvent.AggregateId == aggregateId));
     }
+
+    public Task<int> GetCurrentVersionAsync(string aggregateId, CancellationToken cancellationToken)
+    {
+        var currentVersion = _events
+            .Where(domainEvent => domainEvent.AggregateId == aggregateId)
+            .Select(domainEvent => domainEvent.Version)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        return Task.FromResult(currentVersion);
+    }
 }

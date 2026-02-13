@@ -8,4 +8,5 @@ public record TransactionImported : DomainEvent
     public required DateTimeOffset Date { get; init; }
     public required string Description { get; init; }
     public required string AccountNumber { get; set; }
+    public required TransactionFlowType FlowType { get; init; }
 }

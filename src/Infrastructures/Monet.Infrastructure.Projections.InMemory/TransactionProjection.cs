@@ -20,7 +20,22 @@ public class TransactionProjection : IProjection, IProvideTransactions
                 Date = imported.Date,
                 Description = imported.Description,
                 AccountNumber = imported.AccountNumber,
+                FlowType = imported.FlowType.ToString(),
+                CategoryId = null,
+                CategoryName = null,
             });
+        }
+        else if (domainEvent is TransactionCategoryAssigned categoryAssigned)
+        {
+            var transactionIndex = _transactions.FindIndex(transaction => transaction.TransactionId == categoryAssigned.TransactionAggregateId);
+            if (transactionIndex >= 0)
+            {
+                _transactions[transactionIndex] = _transactions[transactionIndex] with
+                {
+                    CategoryId = categoryAssigned.CategoryId,
+                    CategoryName = categoryAssigned.CategoryName,
+                };
+            }
         }
 
         return Task.CompletedTask;
@@ -29,5 +44,10 @@ public class TransactionProjection : IProjection, IProvideTransactions
     public Task<IReadOnlyList<TransactionReadModel>> GetAllAsync()
     {
         return Task.FromResult<IReadOnlyList<TransactionReadModel>>(_transactions.AsReadOnly());
+    }
+
+    public Task<TransactionReadModel?> GetByIdAsync(string transactionId)
+    {
+        return Task.FromResult(_transactions.FirstOrDefault(transaction => transaction.TransactionId == transactionId));
     }
 }

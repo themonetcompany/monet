@@ -66,6 +66,7 @@ public class TransactionImportHandler(IStoreEvent eventStore, IAuthenticationGat
                         Date = transaction.Date,
                         Description = transaction.Description,
                         AccountNumber = transaction.AccountNumber,
+                        FlowType = ComputeFlowType(transaction.Amount),
                         Timestamp = clock.Now,
                         PublisherId = connectedUser.Id,
                     });
@@ -82,8 +83,22 @@ public class TransactionImportHandler(IStoreEvent eventStore, IAuthenticationGat
 
 
     }
-}
 
+    private static TransactionFlowType ComputeFlowType(decimal amount)
+    {
+        if (amount < 0)
+        {
+            return TransactionFlowType.Expense;
+        }
+
+        if (amount > 0)
+        {
+            return TransactionFlowType.Income;
+        }
+
+        return TransactionFlowType.Neutral;
+    }
+}
 
 
 

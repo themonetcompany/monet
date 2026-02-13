@@ -74,6 +74,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
             Description = "My First Transaction",
             AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -155,6 +156,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
             Description = "My First Transaction",
             AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -187,6 +189,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
             Description = "My First Transaction",
             AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -272,6 +275,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2023, 02, 04, 14, 54, 12, TimeSpan.Zero),
             Description = "My First Transaction",
             AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -284,6 +288,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2026, 02, 5, 08, 40, 23, TimeSpan.Zero),
             Description = "My Second Transaction",
             AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -385,6 +390,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
             Description = "My First Transaction",
             AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -428,6 +434,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2026, 02, 05, 08, 40, 23, TimeSpan.Zero),
             Description = "My Second Transaction",
             AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -490,6 +497,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
             Description = "My First Transaction",
             AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -564,6 +572,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
             Description = "My First Transaction",
             AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -576,6 +585,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2026, 02, 05, 08, 40, 23, TimeSpan.Zero),
             Description = "My Second Transaction",
             AccountNumber = "ACCOUNT002",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -650,6 +660,7 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
             Description = "My First Transaction",
             AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Income,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
@@ -662,6 +673,113 @@ public class ImportTransactionTests
             Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
             Description = "My First Transaction",
             AccountNumber = "ACCOUNT002",
+            FlowType = TransactionFlowType.Income,
+            Timestamp = _clock.Now,
+            PublisherId = JohnDoe.Id,
+        });
+    }
+
+    [Fact]
+    public async Task Given_ImportWithNegativeAmount_When_Import_Then_ShouldSetExpenseFlowType()
+    {
+        _clock.SetDate(2026, 02, 06);
+        var transactionId = Guid.NewGuid();
+        _guidGenerator.SetNext(transactionId);
+        _authenticationGateway.ConnectedUser(JohnDoe);
+
+        _eventStore.PublishedEvents.Add(new AccountCreated
+        {
+            AggregateId = "Account-ACCOUNT001",
+            Id = Guid.NewGuid(),
+            Version = 1,
+            AccountNumber = "ACCOUNT001",
+            Name = "My Account",
+            Timestamp = _clock.Now.AddDays(-1),
+            PublisherId = Guid.NewGuid(),
+        });
+
+        var import = new TransactionImport
+        {
+            Transactions =
+            [
+                new TransactionImport.Transaction
+                {
+                    TransactionId  = "TRANSACTION001",
+                    Amount = -42,
+                    Currency = "EUR",
+                    Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
+                    Description = "My Expense Transaction",
+                    AccountNumber = "ACCOUNT001"
+                }
+            ]
+        };
+
+        var result = await Handler.HandleAsync(import, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        _eventStore.ShouldContain(new TransactionImported
+        {
+            AggregateId = "Transaction-ACCOUNT001-TRANSACTION001",
+            Id = transactionId,
+            Version = 1,
+            Amount = new Amount(-42, "EUR"),
+            Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
+            Description = "My Expense Transaction",
+            AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Expense,
+            Timestamp = _clock.Now,
+            PublisherId = JohnDoe.Id,
+        });
+    }
+
+    [Fact]
+    public async Task Given_ImportWithZeroAmount_When_Import_Then_ShouldSetNeutralFlowType()
+    {
+        _clock.SetDate(2026, 02, 06);
+        var transactionId = Guid.NewGuid();
+        _guidGenerator.SetNext(transactionId);
+        _authenticationGateway.ConnectedUser(JohnDoe);
+
+        _eventStore.PublishedEvents.Add(new AccountCreated
+        {
+            AggregateId = "Account-ACCOUNT001",
+            Id = Guid.NewGuid(),
+            Version = 1,
+            AccountNumber = "ACCOUNT001",
+            Name = "My Account",
+            Timestamp = _clock.Now.AddDays(-1),
+            PublisherId = Guid.NewGuid(),
+        });
+
+        var import = new TransactionImport
+        {
+            Transactions =
+            [
+                new TransactionImport.Transaction
+                {
+                    TransactionId  = "TRANSACTION001",
+                    Amount = 0,
+                    Currency = "EUR",
+                    Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
+                    Description = "My Neutral Transaction",
+                    AccountNumber = "ACCOUNT001"
+                }
+            ]
+        };
+
+        var result = await Handler.HandleAsync(import, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        _eventStore.ShouldContain(new TransactionImported
+        {
+            AggregateId = "Transaction-ACCOUNT001-TRANSACTION001",
+            Id = transactionId,
+            Version = 1,
+            Amount = new Amount(0, "EUR"),
+            Date = new DateTimeOffset(2023, 02, 04, 00, 00, 00, TimeSpan.Zero),
+            Description = "My Neutral Transaction",
+            AccountNumber = "ACCOUNT001",
+            FlowType = TransactionFlowType.Neutral,
             Timestamp = _clock.Now,
             PublisherId = JohnDoe.Id,
         });
